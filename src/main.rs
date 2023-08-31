@@ -5,15 +5,18 @@ mod console;
 mod handler;
 mod memory;
 mod print;
+mod process;
 mod sbi;
 mod types;
 mod utils;
 
+use crate::process::{process_yield, CURRENT_PROC, IDLE_PROC};
 use core::{
     arch::{asm, global_asm},
     panic::PanicInfo,
     ptr,
 };
+use process::Process;
 
 extern "C" {
     static mut __bss: u8;
@@ -31,6 +34,16 @@ fn kernel_main() -> ! {
     let paddr1 = unsafe { memory::alloc_pages(1) };
     println!("alloc_pages test: paddr0={paddr0:x}");
     println!("alloc_pages test: paddr1={paddr1:x}");
+
+    unsafe {
+        IDLE_PROC = Process::create(0);
+        (*IDLE_PROC).pid = -1;
+        CURRENT_PROC = IDLE_PROC;
+
+        Process::create(proc_a_entry as u64);
+        Process::create(proc_b_entry as u64);
+        process_yield();
+    }
 
     unsafe {
         asm!("unimp");
@@ -63,6 +76,34 @@ fn panic(info: &PanicInfo) -> ! {
     loop {
         unsafe {
             asm!("wfi");
+        }
+    }
+}
+
+fn proc_a_entry() {
+    println!("starting process A");
+    loop {
+        print!("A");
+        unsafe {
+            process_yield();
+
+            for _ in 0..3000000 {
+                asm!("nop");
+            }
+        }
+    }
+}
+
+fn proc_b_entry() {
+    println!("starting process B");
+    loop {
+        print!("B");
+        unsafe {
+            process_yield();
+
+            for _ in 0..3000000 {
+                asm!("nop");
+            }
         }
     }
 }

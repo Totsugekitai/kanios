@@ -42,7 +42,8 @@ global_asm!(
 .align 8
 .global kernel_entry
 kernel_entry:
-    csrw sscratch, sp
+    csrrw sp, sscratch, sp
+
     addi sp, sp, -8 * 31
     sd ra,  8 * 0(sp)
     sd gp,  8 * 1(sp)
@@ -77,6 +78,9 @@ kernel_entry:
 
     csrr a0, sscratch
     sd a0, 8 * 30(sp)
+
+    addi a0, sp, 8 * 31
+    csrw sscratch, a0
 
     mv a0, sp
     call handle_trap
