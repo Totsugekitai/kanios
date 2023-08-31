@@ -30,7 +30,6 @@ fn kernel_main() -> ! {
     }
 
     panic!("booted!");
-    unreachable!("unreachable here!");
 }
 
 global_asm!(
@@ -40,7 +39,7 @@ global_asm!(
 boot:
     la sp, __stack_top
     j  kernel_main
-"#
+    "#
 );
 
 fn clear_bss() {
