@@ -4,6 +4,7 @@
 mod console;
 mod print;
 mod sbi;
+mod types;
 
 use core::{
     arch::{asm, global_asm},
@@ -20,14 +21,8 @@ extern "C" {
 fn kernel_main() -> ! {
     clear_bss();
 
-    println!("\nHello {}", "World!");
-    println!("1 + 2 = {}, {:x}", 1 + 2, 0x1234abcd);
-
-    unsafe {
-        loop {
-            asm!("wfi");
-        }
-    }
+    panic!("booted!");
+    unreachable!("unreachable here!");
 }
 
 global_asm!(
@@ -49,11 +44,8 @@ fn clear_bss() {
 }
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    // unsafe {
-    //     UART.force_unlock();
-    // }
-    // println!("{info}");
+fn panic(info: &PanicInfo) -> ! {
+    println!("{info}");
     loop {
         unsafe {
             asm!("wfi");
