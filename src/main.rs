@@ -2,9 +2,11 @@
 #![no_main]
 
 mod console;
+mod handler;
 mod print;
 mod sbi;
 mod types;
+mod utils;
 
 use core::{
     arch::{asm, global_asm},
@@ -15,11 +17,17 @@ use core::{
 extern "C" {
     static mut __bss: u8;
     static __bss_end: u8;
+    fn kernel_entry();
 }
 
 #[no_mangle]
 fn kernel_main() -> ! {
     clear_bss();
+
+    write_csr!("stvec", kernel_entry as u64);
+    unsafe {
+        asm!("unimp");
+    }
 
     panic!("booted!");
     unreachable!("unreachable here!");
