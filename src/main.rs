@@ -3,6 +3,7 @@
 
 mod console;
 mod handler;
+mod memory;
 mod print;
 mod sbi;
 mod types;
@@ -25,6 +26,12 @@ fn kernel_main() -> ! {
     clear_bss();
 
     write_csr!("stvec", kernel_entry as u64);
+
+    let paddr0 = unsafe { memory::alloc_pages(2) };
+    let paddr1 = unsafe { memory::alloc_pages(1) };
+    println!("alloc_pages test: paddr0={paddr0:x}");
+    println!("alloc_pages test: paddr1={paddr1:x}");
+
     unsafe {
         asm!("unimp");
     }

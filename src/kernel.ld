@@ -25,4 +25,9 @@ SECTIONS {
     . = ALIGN(8);
     . += 128 * 1024; /* 128KB */
     PROVIDE(__stack_top = .);
+
+    . = ALIGN(4096);
+    PROVIDE(__free_ram = .);
+    . += 64 * 1024 * 1024; /* 64MB */
+    PROVIDE(__free_ram_end = .);
 }
