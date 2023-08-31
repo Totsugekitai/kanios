@@ -1,2 +1,2 @@
-pub type paddr_t = u64;
-pub type vaddr_t = u64;
+pub type PhysAddr = u64;
+pub type VirtAddr = u64;
