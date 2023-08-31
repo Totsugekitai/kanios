@@ -1,7 +1,7 @@
 use crate::types::PhysAddr;
 use core::{arch::global_asm, ptr};
 
-const PAGE_SIZE: u64 = 0x1000;
+pub const PAGE_SIZE: u64 = 0x1000;
 
 extern "C" {
     static __free_ram: u8;

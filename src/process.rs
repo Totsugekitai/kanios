@@ -1,9 +1,18 @@
+use crate::{
+    __free_ram_end, __kernel_base,
+    memory::{alloc_pages, PAGE_SIZE},
+    paging::SATP_SV39,
+    types::{PhysAddr, VirtAddr},
+    write_csr,
+};
 use core::{
     arch::{asm, global_asm},
     mem, ptr,
 };
 
-use crate::{types::VirtAddr, write_csr};
+extern "C" {
+    fn switch_context(prev_sp: *mut VirtAddr, next_sp: *const VirtAddr);
+}
 
 const PROCS_MAX: usize = 8;
 const PROC_UNUSED: i64 = 0;
@@ -15,6 +24,7 @@ pub struct Process {
     pub pid: i64,
     pub state: i64,
     pub sp: VirtAddr,
+    pub page_table: PhysAddr,
     pub stack: [u8; 8192],
 }
 
@@ -24,6 +34,7 @@ impl Process {
             pid: 0,
             state: PROC_UNUSED,
             sp: 0,
+            page_table: 0,
             stack: [0; 8192],
         }
     }
@@ -64,9 +75,18 @@ impl Process {
             *sp.sub(12) = 0; // s0
             *sp.sub(13) = pc; // ra
 
+            let page_table = alloc_pages(1);
+            let mut paddr = ptr::addr_of!(__kernel_base) as *const u8 as PhysAddr;
+            while paddr < ptr::addr_of!(__free_ram_end) as *const u8 as PhysAddr {
+                use crate::paging::*;
+                map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+                paddr += PAGE_SIZE;
+            }
+
             (*proc).pid = idx + 1;
             (*proc).state = PROC_RUNNABLE;
             (*proc).sp = sp.sub(13) as VirtAddr;
+            (*proc).page_table = page_table;
         }
 
         proc
@@ -118,10 +138,6 @@ switch_context:
 pub static mut CURRENT_PROC: *mut Process = ptr::null_mut();
 pub static mut IDLE_PROC: *mut Process = ptr::null_mut();
 
-extern "C" {
-    fn switch_context(prev_sp: *mut VirtAddr, next_sp: *const VirtAddr);
-}
-
 pub unsafe fn process_yield() {
     let mut next = IDLE_PROC;
     for i in 0..PROCS_MAX {
@@ -138,6 +154,12 @@ pub unsafe fn process_yield() {
         return;
     }
 
+    asm!(
+        "sfence.vma",
+        "csrw satp, {satp}",
+        "sfence.vma",
+        satp = in(reg) (SATP_SV39 | ((*next).page_table / PAGE_SIZE))
+    );
     write_csr!(
         "sscratch",
         (&mut (*next).stack as *mut [u8] as *mut u8)

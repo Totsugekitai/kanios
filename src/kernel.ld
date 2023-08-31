@@ -2,6 +2,7 @@ ENTRY(boot)
 
 SECTIONS {
     . = 0x80200000;
+    PROVIDE(__kernel_base = .);
 
     .text : {
         KEEP(*(.text.boot));

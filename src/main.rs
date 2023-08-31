@@ -4,6 +4,7 @@
 mod console;
 mod handler;
 mod memory;
+mod paging;
 mod print;
 mod process;
 mod sbi;
@@ -19,8 +20,10 @@ use core::{
 use process::Process;
 
 extern "C" {
+    pub static __kernel_base: u8;
     static mut __bss: u8;
     static __bss_end: u8;
+    pub static __free_ram_end: u8;
     fn kernel_entry();
 }
 
