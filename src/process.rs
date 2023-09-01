@@ -1,8 +1,9 @@
 use crate::{
     __free_ram_end, __kernel_base,
     memory::{alloc_pages, PAGE_SIZE},
-    paging::SATP_SV39,
+    paging::{map_page, PAGE_R, PAGE_W, PAGE_X, SATP_SV39},
     types::{PhysAddr, VirtAddr},
+    virtio_blk::VIRTIO_BLK_PADDR,
     write_csr,
 };
 use core::{
@@ -78,10 +79,15 @@ impl Process {
             let page_table = alloc_pages(1);
             let mut paddr = ptr::addr_of!(__kernel_base) as *const u8 as PhysAddr;
             while paddr < ptr::addr_of!(__free_ram_end) as *const u8 as PhysAddr {
-                use crate::paging::*;
                 map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
                 paddr += PAGE_SIZE;
             }
+            map_page(
+                page_table,
+                VIRTIO_BLK_PADDR,
+                VIRTIO_BLK_PADDR,
+                PAGE_R | PAGE_W,
+            );
 
             (*proc).pid = idx + 1;
             (*proc).state = PROC_RUNNABLE;

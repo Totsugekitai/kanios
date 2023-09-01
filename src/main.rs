@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(offset_of)]
 
 mod console;
 mod handler;
@@ -10,6 +11,7 @@ mod process;
 mod sbi;
 mod types;
 mod utils;
+mod virtio_blk;
 
 use crate::process::{process_yield, CURRENT_PROC, IDLE_PROC};
 use core::{
@@ -32,6 +34,22 @@ fn kernel_main() -> ! {
     clear_bss();
 
     write_csr!("stvec", kernel_entry as u64);
+
+    unsafe {
+        virtio_blk::init();
+
+        use virtio_blk::{Virtq, SECTOR_SIZE};
+        let mut buf: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
+        Virtq::read_write_disk(&mut buf as *mut [u8] as *mut u8, 0, false);
+        let text = buf.iter().take_while(|c| **c != 0);
+        for c in text {
+            print!("{}", *c as char);
+        }
+        println!();
+
+        let buf = b"hello from kernel!!!\n";
+        Virtq::read_write_disk(buf as *const [u8] as *mut u8, 0, true);
+    }
 
     let paddr0 = unsafe { memory::alloc_pages(2) };
     let paddr1 = unsafe { memory::alloc_pages(1) };

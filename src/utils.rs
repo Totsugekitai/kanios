@@ -19,3 +19,12 @@ macro_rules! write_csr {
         }
     };
 }
+
+pub fn align_up(value: u64, align: u64) -> u64 {
+    let r = value % align;
+    if r == 0 {
+        value
+    } else {
+        value + (align - r)
+    }
+}
