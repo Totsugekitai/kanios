@@ -17,11 +17,11 @@ const VIRTIO_REG_MAGIC: u64 = 0x00;
 const VIRTIO_REG_VERSION: u64 = 0x04;
 const VIRTIO_REG_DEVICE_ID: u64 = 0x08;
 const VIRTIO_REG_QUEUE_SEL: u64 = 0x30;
-const VIRTIO_REG_QUEUE_NUM_MAX: u64 = 0x34;
+// const VIRTIO_REG_QUEUE_NUM_MAX: u64 = 0x34;
 const VIRTIO_REG_QUEUE_NUM: u64 = 0x38;
 const VIRTIO_REG_QUEUE_ALIGN: u64 = 0x3c;
 const VIRTIO_REG_QUEUE_PFN: u64 = 0x40;
-const VIRTIO_REG_QUEUE_READY: u64 = 0x44;
+// const VIRTIO_REG_QUEUE_READY: u64 = 0x44;
 const VIRTIO_REG_QUEUE_NOTIFY: u64 = 0x50;
 const VIRTIO_REG_DEVICE_STATUS: u64 = 0x70;
 const VIRTIO_REG_DEVICE_CONFIG: u64 = 0x100;
@@ -31,7 +31,7 @@ const VIRTIO_STATUS_DRIVER_OK: u32 = 4;
 const VIRTIO_STATUS_FEAT_OK: u32 = 8;
 const VIRTQ_DESC_F_NEXT: u16 = 1;
 const VIRTQ_DESC_F_WRITE: u16 = 2;
-const VIRTQ_AVAIL_F_NO_INTERRUPT: u64 = 1;
+// const VIRTQ_AVAIL_F_NO_INTERRUPT: u64 = 1;
 const VIRTIO_BLK_T_IN: u64 = 0;
 const VIRTIO_BLK_T_OUT: u64 = 1;
 
@@ -197,9 +197,9 @@ struct VirtioBlkReq {
     status: u8,
 }
 
-unsafe fn reg_read8(offset: u64) -> u8 {
-    ((VIRTIO_BLK_PADDR + offset) as *const u8).read_volatile()
-}
+// unsafe fn reg_read8(offset: u64) -> u8 {
+//     ((VIRTIO_BLK_PADDR + offset) as *const u8).read_volatile()
+// }
 
 unsafe fn reg_read32(offset: u64) -> u32 {
     ((VIRTIO_BLK_PADDR + offset) as *const u32).read_volatile()
