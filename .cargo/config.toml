@@ -6,6 +6,6 @@ rustflags = ['-Clink-arg=-Tsrc/kernel.ld']
 runner = """
 qemu-system-riscv64 \
 -machine virt -bios default -nographic -serial mon:stdio --no-reboot \
--drive id=drive0,file=disk/lorem.txt,format=raw \
+-drive id=drive0,file=disk.tar,format=raw \
 -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0 \
 -kernel """

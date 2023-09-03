@@ -121,70 +121,6 @@ impl Virtq {
         // self.last_used_idx != unsafe { *self.used_idx }
         self.last_used_idx != self.used.idx
     }
-
-    pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) {
-        if sector >= BLK_CAPACITY / SECTOR_SIZE {
-            println!(
-                "virtio: tried to read/write sector={sector}, but capacity is {}",
-                BLK_CAPACITY / SECTOR_SIZE
-            );
-            return;
-        }
-
-        // リクエストを構築する
-        let blk_req = BLK_REQ.as_mut().unwrap();
-        blk_req.sector = sector as u64;
-        blk_req.type_ = if is_write {
-            VIRTIO_BLK_T_OUT as u32
-        } else {
-            VIRTIO_BLK_T_IN as u32
-        };
-        if is_write {
-            ptr::copy(
-                buf,
-                &mut blk_req.data as *mut [u8] as *mut u8,
-                SECTOR_SIZE as usize,
-            );
-        }
-
-        // virtqueueのディスクリプタを構築する
-        let vq = BLK_REQUEST_VQ.as_mut().unwrap();
-        vq.desc[0].addr = BLK_REQ_PADDR;
-        vq.desc[0].len = (mem::size_of::<u32>() * 2 + mem::size_of::<u64>()) as u32;
-        vq.desc[0].flags = VIRTQ_DESC_F_NEXT;
-        vq.desc[0].next = 1;
-
-        vq.desc[1].addr = BLK_REQ_PADDR + mem::offset_of!(VirtioBlkReq, data) as u64;
-        vq.desc[1].len = SECTOR_SIZE;
-        vq.desc[1].flags = VIRTQ_DESC_F_NEXT | if is_write { 0 } else { VIRTQ_DESC_F_WRITE };
-        vq.desc[1].next = 2;
-
-        vq.desc[2].addr = BLK_REQ_PADDR + mem::offset_of!(VirtioBlkReq, status) as u64;
-        vq.desc[2].len = mem::size_of::<u8>() as u32;
-        vq.desc[2].flags = VIRTQ_DESC_F_WRITE;
-
-        // デバイスに新しいリクエストがあることを通知する
-        Self::kick(vq, 0);
-
-        while vq.is_busy() {}
-
-        // 0でない値が帰ってきたらエラー
-        if blk_req.status != 0 {
-            println!(
-                "virtio: warn: failed to read/write sector={sector}, status={}",
-                blk_req.status
-            );
-        }
-
-        // 読み込み処理の場合は、バッファにデータをコピーする
-        if !is_write {
-            ptr::copy(
-                &blk_req.data as *const [u8] as *const u8,
-                buf,
-                SECTOR_SIZE as usize,
-            );
-        }
-    }
 }
 
 #[repr(C, packed)]
@@ -242,10 +178,74 @@ pub unsafe fn init() {
 
     // ディスク容量を取得
     BLK_CAPACITY = reg_read64(VIRTIO_REG_DEVICE_CONFIG + 0) as u32 * SECTOR_SIZE;
-    println!("virtio-blk: capacity is {BLK_CAPACITY}");
+    println!("virtio-blk: capacity is {BLK_CAPACITY} bytes");
 
     // デバイスへの処理要求を格納する領域を確保
     BLK_REQ_PADDR =
         alloc_pages(align_up(mem::size_of::<VirtioBlkReq>() as u64, PAGE_SIZE) / PAGE_SIZE);
     BLK_REQ = BLK_REQ_PADDR as *mut VirtioBlkReq;
+}
+
+pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) {
+    if sector >= BLK_CAPACITY / SECTOR_SIZE {
+        println!(
+            "virtio: tried to read/write sector={sector}, but capacity is {}",
+            BLK_CAPACITY / SECTOR_SIZE
+        );
+        return;
+    }
+
+    // リクエストを構築する
+    let blk_req = BLK_REQ.as_mut().unwrap();
+    blk_req.sector = sector as u64;
+    blk_req.type_ = if is_write {
+        VIRTIO_BLK_T_OUT as u32
+    } else {
+        VIRTIO_BLK_T_IN as u32
+    };
+    if is_write {
+        ptr::copy(
+            buf,
+            &mut blk_req.data as *mut [u8] as *mut u8,
+            SECTOR_SIZE as usize,
+        );
+    }
+
+    // virtqueueのディスクリプタを構築する
+    let vq = BLK_REQUEST_VQ.as_mut().unwrap();
+    vq.desc[0].addr = BLK_REQ_PADDR;
+    vq.desc[0].len = (mem::size_of::<u32>() * 2 + mem::size_of::<u64>()) as u32;
+    vq.desc[0].flags = VIRTQ_DESC_F_NEXT;
+    vq.desc[0].next = 1;
+
+    vq.desc[1].addr = BLK_REQ_PADDR + mem::offset_of!(VirtioBlkReq, data) as u64;
+    vq.desc[1].len = SECTOR_SIZE;
+    vq.desc[1].flags = VIRTQ_DESC_F_NEXT | if is_write { 0 } else { VIRTQ_DESC_F_WRITE };
+    vq.desc[1].next = 2;
+
+    vq.desc[2].addr = BLK_REQ_PADDR + mem::offset_of!(VirtioBlkReq, status) as u64;
+    vq.desc[2].len = mem::size_of::<u8>() as u32;
+    vq.desc[2].flags = VIRTQ_DESC_F_WRITE;
+
+    // デバイスに新しいリクエストがあることを通知する
+    Virtq::kick(vq, 0);
+
+    while vq.is_busy() {}
+
+    // 0でない値が帰ってきたらエラー
+    if blk_req.status != 0 {
+        println!(
+            "virtio: warn: failed to read/write sector={sector}, status={}",
+            blk_req.status
+        );
+    }
+
+    // 読み込み処理の場合は、バッファにデータをコピーする
+    if !is_write {
+        ptr::copy(
+            &blk_req.data as *const [u8] as *const u8,
+            buf,
+            SECTOR_SIZE as usize,
+        );
+    }
 }

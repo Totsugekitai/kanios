@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(offset_of)]
+#![feature(ascii_char)]
 
 mod console;
 mod handler;
@@ -9,6 +10,7 @@ mod paging;
 mod print;
 mod process;
 mod sbi;
+mod tarfs;
 mod types;
 mod utils;
 mod virtio_blk;
@@ -37,18 +39,16 @@ fn kernel_main() -> ! {
 
     unsafe {
         virtio_blk::init();
+        tarfs::init();
 
-        use virtio_blk::{Virtq, SECTOR_SIZE};
-        let mut buf: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
-        Virtq::read_write_disk(&mut buf as *mut [u8] as *mut u8, 0, false);
-        let text = buf.iter().take_while(|c| **c != 0);
-        for c in text {
-            print!("{}", *c as char);
-        }
-        println!();
+        let file = tarfs::lookup("hello.txt").unwrap().as_mut().unwrap();
+        let read_data = file.data[0..file.size].as_ascii().unwrap().as_str();
+        println!("{read_data}");
 
-        let buf = b"hello from kernel!!!\n";
-        Virtq::read_write_disk(buf as *const [u8] as *mut u8, 0, true);
+        // let write_data = b"hello tarfs!\0";
+        // file.data[0..write_data.len()].copy_from_slice(write_data);
+        // file.size = write_data.len();
+        // tarfs::flush();
     }
 
     let paddr0 = unsafe { memory::alloc_pages(2) };
