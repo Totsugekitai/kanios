@@ -3,7 +3,7 @@ use crate::{
     utils::{align_up, oct2int},
     virtio_blk::{self, read_write_disk, SECTOR_SIZE},
 };
-use core::{mem, ptr, slice};
+use core::{mem, slice};
 
 const FILES_NAX: usize = 2;
 const DISK_MAX_SIZE: usize = align_up(
