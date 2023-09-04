@@ -4,6 +4,7 @@
 #![feature(ascii_char)]
 
 mod console;
+mod elf;
 mod handler;
 mod memory;
 mod paging;
@@ -15,7 +16,10 @@ mod types;
 mod utils;
 mod virtio_blk;
 
-use crate::process::{process_yield, CURRENT_PROC, IDLE_PROC};
+use crate::{
+    elf::ElfHeader,
+    process::{process_yield, CURRENT_PROC, IDLE_PROC},
+};
 use core::{
     arch::{asm, global_asm},
     panic::PanicInfo,
@@ -57,12 +61,13 @@ fn kernel_main() -> ! {
     println!("alloc_pages test: paddr1={paddr1:x}");
 
     unsafe {
-        IDLE_PROC = Process::create(0);
+        IDLE_PROC = Process::create(ptr::null());
         (*IDLE_PROC).pid = -1;
         CURRENT_PROC = IDLE_PROC;
 
-        Process::create(proc_a_entry as u64);
-        Process::create(proc_b_entry as u64);
+        let shell = &tarfs::lookup("shell.elf").unwrap().as_ref().unwrap().data as *const u8
+            as *const ElfHeader;
+        Process::create(shell);
         process_yield();
     }
 

@@ -1,6 +1,7 @@
-use crate::memory::{alloc_pages, PAGE_SIZE};
-
-use crate::types::{PhysAddr, VirtAddr};
+use crate::{
+    memory::{alloc_pages, PAGE_SIZE},
+    types::{PhysAddr, VirtAddr},
+};
 
 pub const SATP_SV39: u64 = 8 << 60;
 pub const PAGE_V: u64 = 1 << 0;

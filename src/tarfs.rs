@@ -5,9 +5,10 @@ use crate::{
 };
 use core::{mem, slice};
 
-const FILES_NAX: usize = 2;
+const FILES_MAX: usize = 3;
+const FILE_DATA_MAX: usize = 64 * 1024; // 64KB
 const DISK_MAX_SIZE: usize = align_up(
-    (mem::size_of::<File>() * FILES_NAX) as u64,
+    (mem::size_of::<File>() * FILES_MAX) as u64,
     SECTOR_SIZE as u64,
 ) as usize;
 
@@ -36,10 +37,10 @@ struct TarHeader {
 
 #[derive(Debug, Clone, Copy)]
 pub struct File {
-    pub in_use: bool,     // このファイルエントリが使われているか
-    pub name: [u8; 100],  // ファイル名
-    pub data: [u8; 1024], // ファイルの内容
-    pub size: usize,      // ファイルサイズ
+    pub in_use: bool,              // このファイルエントリが使われているか
+    pub name: [u8; 100],           // ファイル名
+    pub data: [u8; FILE_DATA_MAX], // ファイルの内容
+    pub size: usize,               // ファイルサイズ
 }
 
 impl File {
@@ -47,13 +48,13 @@ impl File {
         Self {
             in_use: false,
             name: [0; 100],
-            data: [0; 1024],
+            data: [0; FILE_DATA_MAX],
             size: 0,
         }
     }
 }
 
-static mut FILES: [File; FILES_NAX] = [File::new(); FILES_NAX];
+static mut FILES: [File; FILES_MAX] = [File::new(); FILES_MAX];
 static mut DISK: [u8; DISK_MAX_SIZE] = [0; DISK_MAX_SIZE];
 
 pub unsafe fn init() {
@@ -68,7 +69,7 @@ pub unsafe fn init() {
     }
 
     let mut off = 0;
-    for i in 0..FILES_NAX {
+    for i in 0..FILES_MAX {
         let header = (&mut DISK[off] as *mut u8 as *mut TarHeader)
             .as_mut()
             .unwrap();
@@ -114,7 +115,7 @@ pub unsafe fn init() {
 
 pub unsafe fn flush() {
     let mut off = 0;
-    for file_i in 0..FILES_NAX {
+    for file_i in 0..FILES_MAX {
         let file = &mut FILES[file_i];
         if !file.in_use {
             continue;
@@ -190,7 +191,7 @@ pub unsafe fn flush() {
 }
 
 pub fn lookup(filename: &str) -> Result<*mut File, ()> {
-    for i in 0..FILES_NAX {
+    for i in 0..FILES_MAX {
         let file = unsafe { &FILES[i] };
         let name = &file.name.as_ascii().unwrap().as_str()[0..filename.len()];
         if name == filename {

@@ -1,7 +1,8 @@
 use crate::{
     __free_ram_end, __kernel_base,
+    elf::ElfHeader,
     memory::{alloc_pages, PAGE_SIZE},
-    paging::{map_page, PAGE_R, PAGE_W, PAGE_X, SATP_SV39},
+    paging::{map_page, PAGE_R, PAGE_U, PAGE_W, PAGE_X, SATP_SV39},
     types::{PhysAddr, VirtAddr},
     virtio_blk::VIRTIO_BLK_PADDR,
     write_csr,
@@ -13,11 +14,16 @@ use core::{
 
 extern "C" {
     fn switch_context(prev_sp: *mut VirtAddr, next_sp: *const VirtAddr);
+    fn user_entry();
 }
 
 const PROCS_MAX: usize = 8;
 const PROC_UNUSED: i64 = 0;
 const PROC_RUNNABLE: i64 = 1;
+#[no_mangle]
+pub static USER_BASE: u64 = 0x100_0000;
+#[no_mangle]
+pub static SSTATUS_SPIE: u64 = 1 << 5;
 
 #[repr(align(8))]
 #[derive(Debug, Clone, Copy)]
@@ -40,7 +46,7 @@ impl Process {
         }
     }
 
-    pub fn create(pc: u64) -> *mut Process {
+    pub fn create(image: *const ElfHeader) -> *mut Process {
         let mut proc = ptr::null_mut();
 
         let mut idx = -1;
@@ -74,9 +80,11 @@ impl Process {
             *sp.sub(10) = 0; // s2
             *sp.sub(11) = 0; // s1
             *sp.sub(12) = 0; // s0
-            *sp.sub(13) = pc; // ra
+            *sp.sub(13) = user_entry as u64; // ra
 
             let page_table = alloc_pages(1);
+
+            // カーネルのページをマッピングする
             let mut paddr = ptr::addr_of!(__kernel_base) as *const u8 as PhysAddr;
             while paddr < ptr::addr_of!(__free_ram_end) as *const u8 as PhysAddr {
                 map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
@@ -89,6 +97,23 @@ impl Process {
                 PAGE_R | PAGE_W,
             );
 
+            // ユーザーのページをマッピングする
+            if image != ptr::null() {
+                let ehdr = image.as_ref().unwrap();
+                let count = ehdr.count_pages();
+                let page = alloc_pages(count as u64);
+                ehdr.load(page);
+
+                for i in 0..count {
+                    map_page(
+                        page_table,
+                        USER_BASE + (i * 0x1000) as u64,
+                        page,
+                        PAGE_U | PAGE_R | PAGE_W | PAGE_X,
+                    );
+                }
+            }
+
             (*proc).pid = idx + 1;
             (*proc).state = PROC_RUNNABLE;
             (*proc).sp = sp.sub(13) as VirtAddr;
@@ -98,6 +123,19 @@ impl Process {
         proc
     }
 }
+
+global_asm!(
+    r#"
+.align 8
+.global user_entry
+user_entry:
+    ld a0, (USER_BASE)
+    csrw sepc, a0
+    ld a0, (SSTATUS_SPIE)
+    csrw sstatus, a0
+    sret
+    "#
+);
 
 #[no_mangle]
 static mut PROCS: [Process; PROCS_MAX] = [Process::new(); PROCS_MAX];
