@@ -66,11 +66,7 @@ fn kernel_main() -> ! {
         process_yield();
     }
 
-    unsafe {
-        asm!("unimp");
-    }
-
-    panic!("booted!");
+    panic!("switched to idle process");
 }
 
 global_asm!(

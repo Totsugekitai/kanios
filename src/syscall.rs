@@ -1,11 +1,13 @@
 use crate::{
     handler::TrapFrame,
-    process::process_yield,
+    println,
+    process::{process_yield, CURRENT_PROC, PROC_EXITED},
     sbi::{getchar, putchar},
 };
 
 const SYS_PUTCHAR: u64 = 1;
 const SYS_GETCHAR: u64 = 2;
+const SYS_EXIT: u64 = 3;
 
 pub fn handle_syscall(f: *mut TrapFrame) {
     let f = unsafe { f.as_mut().unwrap() };
@@ -23,6 +25,15 @@ pub fn handle_syscall(f: *mut TrapFrame) {
                 process_yield();
             }
         },
+        SYS_EXIT => {
+            let current = unsafe { CURRENT_PROC.as_mut().unwrap() };
+            println!("process {} exited", current.pid);
+            current.state = PROC_EXITED;
+            unsafe {
+                process_yield();
+            }
+            unreachable!();
+        }
         _ => panic!("unexpected syscall a3={:x}", sysno),
     }
 }

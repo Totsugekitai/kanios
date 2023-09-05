@@ -18,8 +18,10 @@ extern "C" {
 }
 
 const PROCS_MAX: usize = 8;
-const PROC_UNUSED: i64 = 0;
-const PROC_RUNNABLE: i64 = 1;
+pub const PROC_UNUSED: i64 = 0;
+pub const PROC_RUNNABLE: i64 = 1;
+pub const PROC_EXITED: i64 = 2;
+
 #[no_mangle]
 pub static USER_BASE: u64 = 0x100_0000;
 #[no_mangle]
