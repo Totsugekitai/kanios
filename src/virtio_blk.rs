@@ -86,7 +86,7 @@ impl Virtq {
     unsafe fn init(index: u32) -> *mut Self {
         let virtq_paddr =
             alloc_pages(align_up(mem::size_of::<Virtq>() as u64, PAGE_SIZE) / PAGE_SIZE);
-        let vq = virtq_paddr.to_u64() as *mut Virtq;
+        let vq = virtq_paddr.as_u64() as *mut Virtq;
         let virtq = vq.as_mut().unwrap();
         virtq.queue_idx = index;
         let used_idx = (&mut (virtq.used) as *const VirtqUsed as *const u8)
@@ -100,7 +100,7 @@ impl Virtq {
         // 6. Notify the device about the used alignment by writing its value in bytes to QueueAlign.
         reg_write32(VIRTIO_REG_QUEUE_ALIGN, 0);
         // 7. Write the physical number of the first page of the queue to the QueuePFN register.
-        reg_write32(VIRTIO_REG_QUEUE_PFN, virtq_paddr.to_u64() as u32);
+        reg_write32(VIRTIO_REG_QUEUE_PFN, virtq_paddr.as_u64() as u32);
 
         vq
     }
@@ -138,15 +138,15 @@ struct VirtioBlkReq {
 // }
 
 unsafe fn reg_read32(offset: u64) -> u32 {
-    ((VIRTIO_BLK_PADDR.to_u64() + offset) as *const u32).read_volatile()
+    ((VIRTIO_BLK_PADDR.as_u64() + offset) as *const u32).read_volatile()
 }
 
 unsafe fn reg_read64(offset: u64) -> u64 {
-    ((VIRTIO_BLK_PADDR.to_u64() + offset) as *const u64).read_volatile()
+    ((VIRTIO_BLK_PADDR.as_u64() + offset) as *const u64).read_volatile()
 }
 
 unsafe fn reg_write32(offset: u64, value: u32) {
-    ((VIRTIO_BLK_PADDR.to_u64() + offset) as *mut u32).write_volatile(value);
+    ((VIRTIO_BLK_PADDR.as_u64() + offset) as *mut u32).write_volatile(value);
 }
 
 unsafe fn reg_fetch_and_or32(offset: u64, value: u32) {
@@ -183,7 +183,7 @@ pub unsafe fn init() {
     // デバイスへの処理要求を格納する領域を確保
     BLK_REQ_PADDR =
         alloc_pages(align_up(mem::size_of::<VirtioBlkReq>() as u64, PAGE_SIZE) / PAGE_SIZE);
-    BLK_REQ = BLK_REQ_PADDR.to_u64() as *mut VirtioBlkReq;
+    BLK_REQ = BLK_REQ_PADDR.as_u64() as *mut VirtioBlkReq;
 }
 
 pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) -> Result<(), ()> {
@@ -213,17 +213,17 @@ pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) -> Resu
 
     // virtqueueのディスクリプタを構築する
     let vq = BLK_REQUEST_VQ.as_mut().unwrap();
-    vq.desc[0].addr = BLK_REQ_PADDR.to_u64();
+    vq.desc[0].addr = BLK_REQ_PADDR.as_u64();
     vq.desc[0].len = (mem::size_of::<u32>() * 2 + mem::size_of::<u64>()) as u32;
     vq.desc[0].flags = VIRTQ_DESC_F_NEXT;
     vq.desc[0].next = 1;
 
-    vq.desc[1].addr = BLK_REQ_PADDR.to_u64() + mem::offset_of!(VirtioBlkReq, data) as u64;
+    vq.desc[1].addr = BLK_REQ_PADDR.as_u64() + mem::offset_of!(VirtioBlkReq, data) as u64;
     vq.desc[1].len = SECTOR_SIZE;
     vq.desc[1].flags = VIRTQ_DESC_F_NEXT | if is_write { 0 } else { VIRTQ_DESC_F_WRITE };
     vq.desc[1].next = 2;
 
-    vq.desc[2].addr = BLK_REQ_PADDR.to_u64() + mem::offset_of!(VirtioBlkReq, status) as u64;
+    vq.desc[2].addr = BLK_REQ_PADDR.as_u64() + mem::offset_of!(VirtioBlkReq, status) as u64;
     vq.desc[2].len = mem::size_of::<u8>() as u32;
     vq.desc[2].flags = VIRTQ_DESC_F_WRITE;
 

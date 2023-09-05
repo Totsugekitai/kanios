@@ -93,7 +93,7 @@ impl Process {
             while paddr < PhysAddr::new(ptr::addr_of!(__free_ram_end) as *const u8 as u64) {
                 map_page(
                     page_table,
-                    VirtAddr::new(paddr.to_u64()),
+                    VirtAddr::new(paddr.as_u64()),
                     paddr,
                     PAGE_R | PAGE_W | PAGE_X,
                 );
@@ -101,7 +101,7 @@ impl Process {
             }
             map_page(
                 page_table,
-                VirtAddr::new(VIRTIO_BLK_PADDR.to_u64()),
+                VirtAddr::new(VIRTIO_BLK_PADDR.as_u64()),
                 VIRTIO_BLK_PADDR,
                 PAGE_R | PAGE_W,
             );
@@ -198,7 +198,7 @@ pub unsafe fn process_yield() {
         "sfence.vma",
         "csrw satp, {satp}",
         "sfence.vma",
-        satp = in(reg) (((*next).page_table.to_u64() / PAGE_SIZE) | SATP_SV39)
+        satp = in(reg) (((*next).page_table.as_u64() / PAGE_SIZE) | SATP_SV39)
     );
     write_csr!(
         "sscratch",

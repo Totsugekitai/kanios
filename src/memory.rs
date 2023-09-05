@@ -26,6 +26,6 @@ pub unsafe fn alloc_pages(n: u64) -> PhysAddr {
         panic!("out of memory");
     }
 
-    ptr::write_bytes(paddr.to_u64() as *mut u8, 0, (n * PAGE_SIZE) as usize);
+    ptr::write_bytes(paddr.as_u64() as *mut u8, 0, (n * PAGE_SIZE) as usize);
     paddr
 }
