@@ -11,6 +11,7 @@ CFLAGS="-std=c11 -O2 -g3 -Wall -Wextra -ffreestanding -nostdlib"
 $CC $CFLAGS -Wl,-Tsrc/user/user.ld -Wl,-Map=src/user/shell.map -o src/user/shell.elf src/user/shell.c src/user/user.c src/user/common.c
 cp src/user/shell.elf ./disk/shell.elf
 
+# tarファイルを作成
 find ./disk/ -type f | tar --xform='s/.*\///g' -cf disk.tar --format=ustar --files-from=/dev/stdin
 
 # カーネルをビルド
