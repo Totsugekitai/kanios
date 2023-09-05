@@ -33,3 +33,8 @@ pub fn putchar(ch: u8) {
         sbi_call(ch as i64, 0, 0, 0, 0, 0, 0, EID_CONSOLE_PUTCHAR);
     }
 }
+
+pub fn getchar() -> i64 {
+    let ret = unsafe { sbi_call(0, 0, 0, 0, 0, 0, 0, 2) };
+    ret.error
+}

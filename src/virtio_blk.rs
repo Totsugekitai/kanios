@@ -186,13 +186,13 @@ pub unsafe fn init() {
     BLK_REQ = BLK_REQ_PADDR as *mut VirtioBlkReq;
 }
 
-pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) {
+pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) -> Result<(), ()> {
     if sector >= BLK_CAPACITY / SECTOR_SIZE {
         println!(
             "virtio: tried to read/write sector={sector}, but capacity is {}",
             BLK_CAPACITY / SECTOR_SIZE
         );
-        return;
+        return Err(());
     }
 
     // リクエストを構築する
@@ -238,6 +238,7 @@ pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) {
             "virtio: warn: failed to read/write sector={sector}, status={}",
             blk_req.status
         );
+        return Err(());
     }
 
     // 読み込み処理の場合は、バッファにデータをコピーする
@@ -248,4 +249,6 @@ pub unsafe fn read_write_disk(buf: *mut u8, sector: u32, is_write: bool) {
             SECTOR_SIZE as usize,
         );
     }
+
+    Ok(())
 }

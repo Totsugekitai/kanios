@@ -4,5 +4,6 @@
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml",
     ],
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "C_Cpp.errorSquiggles": "disabled"
 }

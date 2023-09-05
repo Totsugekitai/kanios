@@ -108,7 +108,7 @@ impl Process {
                     map_page(
                         page_table,
                         USER_BASE + (i * 0x1000) as u64,
-                        page,
+                        page + (i * 0x1000) as u64,
                         PAGE_U | PAGE_R | PAGE_W | PAGE_X,
                     );
                 }

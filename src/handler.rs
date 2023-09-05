@@ -1,9 +1,11 @@
-use crate::read_csr;
+use crate::{println, read_csr, syscall::handle_syscall, write_csr};
 use core::arch::global_asm;
+
+const SCAUSE_ECALL: u64 = 8;
 
 #[repr(C, packed)]
 #[derive(Debug)]
-struct TrapFrame {
+pub struct TrapFrame {
     pub ra: u64,
     pub gp: u64,
     pub tp: u64,
@@ -121,10 +123,19 @@ kernel_entry:
 );
 
 #[no_mangle]
-fn handle_trap(_f: *const TrapFrame) {
+fn handle_trap(f: *mut TrapFrame) {
     let scause = read_csr!("scause");
     let stval = read_csr!("stval");
-    let user_pc = read_csr!("sepc");
+    let mut user_pc = read_csr!("sepc");
 
-    panic!("unexpected trap scause={scause:x}, stval={stval:x}, sepc={user_pc:x}");
+    if scause == SCAUSE_ECALL {
+        handle_syscall(f);
+        user_pc += 4;
+    } else {
+        let f = unsafe { f.as_ref().unwrap() };
+        println!("{f:#x?}");
+        panic!("unexpected trap scause={scause:x}, stval={stval:x}, sepc={user_pc:x}");
+    }
+
+    write_csr!("sepc", user_pc);
 }

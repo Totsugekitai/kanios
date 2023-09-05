@@ -6,7 +6,7 @@ use crate::{
 use core::{mem, slice};
 
 const FILES_MAX: usize = 3;
-const FILE_DATA_MAX: usize = 64 * 1024; // 64KB
+const FILE_DATA_MAX: usize = 4 * 1024 * 1024; // 64KB
 const DISK_MAX_SIZE: usize = align_up(
     (mem::size_of::<File>() * FILES_MAX) as u64,
     SECTOR_SIZE as u64,
@@ -60,11 +60,13 @@ static mut DISK: [u8; DISK_MAX_SIZE] = [0; DISK_MAX_SIZE];
 pub unsafe fn init() {
     let mut sector = 0;
     while sector < mem::size_of_val(&DISK) / SECTOR_SIZE as usize {
-        virtio_blk::read_write_disk(
+        if let Err(_) = virtio_blk::read_write_disk(
             &mut DISK[sector * SECTOR_SIZE as usize],
             sector as u32,
             false,
-        );
+        ) {
+            break;
+        }
         sector += 1;
     }
 
@@ -180,7 +182,7 @@ pub unsafe fn flush() {
 
     // DISK変数の内容をディスクに書き込む
     for sector in 0..(mem::size_of_val(&DISK) / SECTOR_SIZE as usize) {
-        read_write_disk(
+        let _ = read_write_disk(
             &mut DISK[sector * SECTOR_SIZE as usize] as &mut u8,
             sector as u32,
             true,

@@ -2,3 +2,5 @@
 disk/
 tmp/
 disk.*
+*.elf
+*.map

@@ -3,7 +3,6 @@
 #![feature(offset_of)]
 #![feature(ascii_char)]
 
-mod console;
 mod elf;
 mod handler;
 mod memory;
@@ -11,6 +10,7 @@ mod paging;
 mod print;
 mod process;
 mod sbi;
+mod syscall;
 mod tarfs;
 mod types;
 mod utils;
@@ -54,11 +54,6 @@ fn kernel_main() -> ! {
         // file.size = write_data.len();
         // tarfs::flush();
     }
-
-    let paddr0 = unsafe { memory::alloc_pages(2) };
-    let paddr1 = unsafe { memory::alloc_pages(1) };
-    println!("alloc_pages test: paddr0={paddr0:x}");
-    println!("alloc_pages test: paddr1={paddr1:x}");
 
     unsafe {
         IDLE_PROC = Process::create(ptr::null());
@@ -106,30 +101,30 @@ fn panic(info: &PanicInfo) -> ! {
     }
 }
 
-fn proc_a_entry() {
-    println!("starting process A");
-    loop {
-        print!("A");
-        unsafe {
-            process_yield();
+// fn proc_a_entry() {
+//     println!("starting process A");
+//     loop {
+//         print!("A");
+//         unsafe {
+//             process_yield();
 
-            for _ in 0..3000000 {
-                asm!("nop");
-            }
-        }
-    }
-}
+//             for _ in 0..3000000 {
+//                 asm!("nop");
+//             }
+//         }
+//     }
+// }
 
-fn proc_b_entry() {
-    println!("starting process B");
-    loop {
-        print!("B");
-        unsafe {
-            process_yield();
+// fn proc_b_entry() {
+//     println!("starting process B");
+//     loop {
+//         print!("B");
+//         unsafe {
+//             process_yield();
 
-            for _ in 0..3000000 {
-                asm!("nop");
-            }
-        }
-    }
-}
+//             for _ in 0..3000000 {
+//                 asm!("nop");
+//             }
+//         }
+//     }
+// }
