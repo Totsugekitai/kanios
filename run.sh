@@ -12,12 +12,8 @@ $CC $CFLAGS -Wl,-Tsrc/user/user.ld -Wl,-Map=src/user/shell.map -o src/user/shell
 cp src/user/shell.elf ./disk/shell.elf
 
 # tarファイルを作成
+echo 'hello hello hello' > ./disk/hello.txt
 find ./disk/ -type f | tar --xform='s/.*\///g' -cf disk.tar --format=ustar --files-from=/dev/stdin
 
-# カーネルをビルド
+# カーネルをビルド＆QEMU起動
 cargo run
-
-# $QEMU -machine virt -bios default -nographic -serial mon:stdio --no-reboot \
-#     -drive id=drive0,file=disk.tar,format=raw \
-#     -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0 \
-#     -kernel kernel.elf
