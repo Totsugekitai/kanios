@@ -86,12 +86,3 @@ void printf(const char *fmt, ...) {
 
   va_end(vargs);
 }
-
-// void print_dbg(const char *fmt) {
-//   while (*fmt) {
-//     char c = *fmt;
-//     putchar(c);
-
-//     fmt++;
-//   }
-// }
