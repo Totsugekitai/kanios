@@ -1,6 +1,5 @@
-use core::slice;
-
 use crate::{memory::PAGE_SIZE, types::PhysAddr, utils::align_up};
+use core::slice;
 
 #[repr(C, packed)]
 #[derive(Debug)]
@@ -56,10 +55,10 @@ impl ElfHeader {
                 (self as *const ElfHeader as *const u8).offset(off as isize),
                 filesz as usize,
             );
-            let pa_slice = slice::from_raw_parts_mut(paddr as *mut u8, filesz as usize);
+            let pa_slice = slice::from_raw_parts_mut(paddr.to_u64() as *mut u8, filesz as usize);
             pa_slice.copy_from_slice(data);
 
-            paddr += filesz;
+            paddr += PhysAddr(filesz);
         }
     }
 }

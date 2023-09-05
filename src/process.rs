@@ -44,8 +44,8 @@ impl Process {
         Self {
             pid: 0,
             state: PROC_UNUSED,
-            sp: 0,
-            page_table: 0,
+            sp: VirtAddr(0),
+            page_table: PhysAddr(0),
             stack: [0; 8192],
         }
     }
@@ -89,14 +89,19 @@ impl Process {
             let page_table = alloc_pages(1);
 
             // カーネルのページをマッピングする
-            let mut paddr = ptr::addr_of!(__kernel_base) as *const u8 as PhysAddr;
-            while paddr < ptr::addr_of!(__free_ram_end) as *const u8 as PhysAddr {
-                map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
-                paddr += PAGE_SIZE;
+            let mut paddr = PhysAddr(ptr::addr_of!(__kernel_base) as *const u8 as u64);
+            while paddr < PhysAddr(ptr::addr_of!(__free_ram_end) as *const u8 as u64) {
+                map_page(
+                    page_table,
+                    VirtAddr(paddr.to_u64()),
+                    paddr,
+                    PAGE_R | PAGE_W | PAGE_X,
+                );
+                paddr += PhysAddr(PAGE_SIZE);
             }
             map_page(
                 page_table,
-                VIRTIO_BLK_PADDR,
+                VirtAddr(VIRTIO_BLK_PADDR.to_u64()),
                 VIRTIO_BLK_PADDR,
                 PAGE_R | PAGE_W,
             );
@@ -111,8 +116,8 @@ impl Process {
                 for i in 0..count {
                     map_page(
                         page_table,
-                        USER_BASE + (i * 0x1000) as u64,
-                        page + (i * 0x1000) as u64,
+                        VirtAddr(USER_BASE + (i * 0x1000) as u64),
+                        page + PhysAddr((i * 0x1000) as u64),
                         PAGE_U | PAGE_R | PAGE_W | PAGE_X,
                     );
                 }
@@ -120,7 +125,7 @@ impl Process {
 
             (*proc).pid = idx + 1;
             (*proc).state = PROC_RUNNABLE;
-            (*proc).sp = sp.sub(13) as VirtAddr;
+            (*proc).sp = VirtAddr(sp.sub(13) as u64);
             (*proc).page_table = page_table;
         }
 
@@ -193,7 +198,7 @@ pub unsafe fn process_yield() {
         "sfence.vma",
         "csrw satp, {satp}",
         "sfence.vma",
-        satp = in(reg) (SATP_SV39 | ((*next).page_table / PAGE_SIZE))
+        satp = in(reg) (((*next).page_table.to_u64() / PAGE_SIZE) | SATP_SV39)
     );
     write_csr!(
         "sscratch",
