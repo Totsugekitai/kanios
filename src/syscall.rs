@@ -45,7 +45,7 @@ pub fn handle_syscall(f: *mut TrapFrame) {
             let filename = f.a0 as *const u8;
             let filename_len = ascii_len(filename);
             let filename = unsafe {
-                core::str::from_utf8(slice::from_raw_parts(filename, filename_len)).unwrap()
+                core::str::from_utf8(slice::from_raw_parts(filename, filename_len - 1)).unwrap()
             };
             let buf = f.a1 as *mut u8;
             let mut len = f.a2 as usize;

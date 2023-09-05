@@ -1,6 +1,6 @@
 use crate::{
     println,
-    utils::{align_up, oct2int},
+    utils::{align_up, ascii_len, oct2int},
     virtio_blk::{self, read_write_disk, SECTOR_SIZE},
 };
 use core::{mem, slice};
@@ -76,13 +76,14 @@ pub unsafe fn init() {
             .as_mut()
             .unwrap();
 
-        let name = header.name.as_ascii().unwrap().as_str();
+        let name = &core::str::from_utf8(&header.name).unwrap()
+            [0..(ascii_len(&header.name as *const u8) - 1)];
         if name.is_empty() {
             break;
         }
 
-        let magic_ascii = header.magic.as_ascii().unwrap();
-        let magic = &magic_ascii.as_str()[0..(magic_ascii.len() - 1)];
+        let magic = &core::str::from_utf8(&header.magic).unwrap()
+            [0..(ascii_len(&header.magic as *const u8) - 1)];
         if magic != "ustar" {
             panic!("invalid tar header: magic=\"{magic}\"");
         }
@@ -104,7 +105,7 @@ pub unsafe fn init() {
         file.size = filesz;
         println!(
             "file: {}, size={}",
-            file.name.as_ascii().unwrap().as_str(),
+            &core::str::from_utf8(&file.name).unwrap()[0..(ascii_len(&file.name as *const u8) - 1)],
             file.size,
         );
 
@@ -197,7 +198,8 @@ pub unsafe fn flush() {
 pub fn lookup(filename: &str) -> Result<*mut File, ()> {
     for i in 0..FILES_MAX {
         let file = unsafe { &FILES[i] };
-        let name = &file.name.as_ascii().unwrap().as_str()[0..filename.len()];
+        let name =
+            &core::str::from_utf8(&file.name).unwrap()[0..(ascii_len(&file.name as *const u8) - 1)];
         if name == filename {
             return Ok(file as *const File as *mut File);
         }

@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 #![feature(offset_of)]
-#![feature(ascii_char)]
 
 mod elf;
 mod handler;
