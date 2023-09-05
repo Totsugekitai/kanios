@@ -26,6 +26,8 @@ pub const PROC_EXITED: i64 = 2;
 pub static USER_BASE: u64 = 0x100_0000;
 #[no_mangle]
 pub static SSTATUS_SPIE: u64 = 1 << 5;
+#[no_mangle]
+pub static SSTATUS_SUM: u64 = 1 << 18;
 
 #[repr(align(8))]
 #[derive(Debug, Clone, Copy)]
@@ -125,19 +127,6 @@ impl Process {
         proc
     }
 }
-
-global_asm!(
-    r#"
-.align 8
-.global user_entry
-user_entry:
-    ld a0, (USER_BASE)
-    csrw sepc, a0
-    ld a0, (SSTATUS_SPIE)
-    csrw sstatus, a0
-    sret
-    "#
-);
 
 #[no_mangle]
 static mut PROCS: [Process; PROCS_MAX] = [Process::new(); PROCS_MAX];

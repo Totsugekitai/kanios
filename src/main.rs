@@ -45,17 +45,6 @@ fn kernel_main() -> ! {
         virtio_blk::init();
         tarfs::init();
 
-        let file = tarfs::lookup("hello.txt").unwrap().as_mut().unwrap();
-        let read_data = file.data[0..file.size].as_ascii().unwrap().as_str();
-        println!("{read_data}");
-
-        // let write_data = b"hello tarfs!\0";
-        // file.data[0..write_data.len()].copy_from_slice(write_data);
-        // file.size = write_data.len();
-        // tarfs::flush();
-    }
-
-    unsafe {
         IDLE_PROC = Process::create(ptr::null());
         (*IDLE_PROC).pid = -1;
         CURRENT_PROC = IDLE_PROC;

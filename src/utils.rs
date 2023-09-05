@@ -41,3 +41,16 @@ pub fn oct2int(oct: *const u8, len: usize) -> u32 {
     }
     dec
 }
+
+pub fn ascii_len(buf: *const u8) -> usize {
+    let len;
+    let mut i = 0;
+    loop {
+        if unsafe { *buf.add(i as usize) } == b'\0' {
+            len = i + 1;
+            break;
+        }
+        i += 1;
+    }
+    len
+}

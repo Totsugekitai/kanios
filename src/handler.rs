@@ -139,3 +139,26 @@ fn handle_trap(f: *mut TrapFrame) {
 
     write_csr!("sepc", user_pc);
 }
+
+global_asm!(
+    r#"
+.align 8
+.global user_entry
+user_entry:
+    addi sp, sp, -8 * 2
+    sd a0, 0 * 8(sp)
+    sd a1, 1 * 8(sp)
+    
+    ld a0, (USER_BASE)
+    csrw sepc, a0
+    ld a0, (SSTATUS_SPIE)
+    ld a1, (SSTATUS_SUM)
+    or a0, a0 ,a1
+    csrw sstatus, a0
+    
+    ld a0, 0 * 8(sp)
+    ld a1, 1 * 8(sp)
+    addi sp, sp, 8 * 2
+    sret
+    "#
+);

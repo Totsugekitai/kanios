@@ -24,6 +24,13 @@ void main(void) {
       print_dbg("Hello world from shell!\n");
     else if (strcmp(cmdline, "exit") == 0)
       exit();
+    else if (strcmp(cmdline, "readfile") == 0) {
+      char buf[128] = {0};
+      int len = readfile("hello.txt", buf, sizeof(buf));
+      buf[len] = '\0';
+      print_dbg(buf);
+    } else if (strcmp(cmdline, "writefile") == 0)
+      writefile("hello.txt", "Hello from shell!\n", 19);
     else
       print_dbg("unknown command\n");
   }
