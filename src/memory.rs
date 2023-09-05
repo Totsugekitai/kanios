@@ -20,9 +20,9 @@ next_paddr:
 
 pub unsafe fn alloc_pages(n: u64) -> PhysAddr {
     let paddr = next_paddr;
-    next_paddr += PhysAddr(n * PAGE_SIZE);
+    next_paddr += PhysAddr::new(n * PAGE_SIZE);
 
-    if next_paddr > PhysAddr(ptr::addr_of!(__free_ram_end) as u64) {
+    if next_paddr > PhysAddr::new(ptr::addr_of!(__free_ram_end) as u64) {
         panic!("out of memory");
     }
 

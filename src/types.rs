@@ -2,9 +2,13 @@ use core::ops;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PhysAddr(pub u64);
+pub struct PhysAddr(u64);
 
 impl PhysAddr {
+    pub const fn new(pa: u64) -> Self {
+        Self(pa)
+    }
+
     pub fn to_u64(&self) -> u64 {
         self.0
     }
@@ -34,9 +38,13 @@ impl ops::Div for PhysAddr {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct VirtAddr(pub u64);
+pub struct VirtAddr(u64);
 
 impl VirtAddr {
+    pub const fn new(va: u64) -> Self {
+        Self(va)
+    }
+
     pub fn to_u64(&self) -> u64 {
         self.0
     }

@@ -44,8 +44,8 @@ impl Process {
         Self {
             pid: 0,
             state: PROC_UNUSED,
-            sp: VirtAddr(0),
-            page_table: PhysAddr(0),
+            sp: VirtAddr::new(0),
+            page_table: PhysAddr::new(0),
             stack: [0; 8192],
         }
     }
@@ -89,19 +89,19 @@ impl Process {
             let page_table = alloc_pages(1);
 
             // カーネルのページをマッピングする
-            let mut paddr = PhysAddr(ptr::addr_of!(__kernel_base) as *const u8 as u64);
-            while paddr < PhysAddr(ptr::addr_of!(__free_ram_end) as *const u8 as u64) {
+            let mut paddr = PhysAddr::new(ptr::addr_of!(__kernel_base) as *const u8 as u64);
+            while paddr < PhysAddr::new(ptr::addr_of!(__free_ram_end) as *const u8 as u64) {
                 map_page(
                     page_table,
-                    VirtAddr(paddr.to_u64()),
+                    VirtAddr::new(paddr.to_u64()),
                     paddr,
                     PAGE_R | PAGE_W | PAGE_X,
                 );
-                paddr += PhysAddr(PAGE_SIZE);
+                paddr += PhysAddr::new(PAGE_SIZE);
             }
             map_page(
                 page_table,
-                VirtAddr(VIRTIO_BLK_PADDR.to_u64()),
+                VirtAddr::new(VIRTIO_BLK_PADDR.to_u64()),
                 VIRTIO_BLK_PADDR,
                 PAGE_R | PAGE_W,
             );
@@ -116,8 +116,8 @@ impl Process {
                 for i in 0..count {
                     map_page(
                         page_table,
-                        VirtAddr(USER_BASE + (i * 0x1000) as u64),
-                        page + PhysAddr((i * 0x1000) as u64),
+                        VirtAddr::new(USER_BASE + (i * 0x1000) as u64),
+                        page + PhysAddr::new((i * 0x1000) as u64),
                         PAGE_U | PAGE_R | PAGE_W | PAGE_X,
                     );
                 }
@@ -125,7 +125,7 @@ impl Process {
 
             (*proc).pid = idx + 1;
             (*proc).state = PROC_RUNNABLE;
-            (*proc).sp = VirtAddr(sp.sub(13) as u64);
+            (*proc).sp = VirtAddr::new(sp.sub(13) as u64);
             (*proc).page_table = page_table;
         }
 

@@ -58,7 +58,7 @@ impl ElfHeader {
             let pa_slice = slice::from_raw_parts_mut(paddr.to_u64() as *mut u8, filesz as usize);
             pa_slice.copy_from_slice(data);
 
-            paddr += PhysAddr(filesz);
+            paddr += PhysAddr::new(filesz);
         }
     }
 }

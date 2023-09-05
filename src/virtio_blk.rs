@@ -12,7 +12,7 @@ use core::{
 pub const SECTOR_SIZE: u32 = 512;
 const VIRTQ_ENTRY_NUM: usize = 16;
 const VIRTIO_DEVICE_BLK: u32 = 2;
-pub const VIRTIO_BLK_PADDR: PhysAddr = PhysAddr(0x1000_1000);
+pub const VIRTIO_BLK_PADDR: PhysAddr = PhysAddr::new(0x1000_1000);
 const VIRTIO_REG_MAGIC: u64 = 0x00;
 const VIRTIO_REG_VERSION: u64 = 0x04;
 const VIRTIO_REG_DEVICE_ID: u64 = 0x08;
@@ -155,7 +155,7 @@ unsafe fn reg_fetch_and_or32(offset: u64, value: u32) {
 
 static mut BLK_REQUEST_VQ: *mut Virtq = ptr::null_mut();
 static mut BLK_REQ: *mut VirtioBlkReq = ptr::null_mut();
-static mut BLK_REQ_PADDR: PhysAddr = PhysAddr(0);
+static mut BLK_REQ_PADDR: PhysAddr = PhysAddr::new(0);
 static mut BLK_CAPACITY: u32 = 0;
 
 pub unsafe fn init() {
