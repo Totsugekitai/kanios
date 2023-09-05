@@ -1,6 +1,4 @@
 /target
-disk/
-tmp/
-disk.*
+disk.tar
 *.elf
 *.map
