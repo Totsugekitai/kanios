@@ -41,7 +41,7 @@ pub struct TrapFrame {
 
 global_asm!(
     r#"
-.align 8
+.balign 8
 .global kernel_entry
 kernel_entry:
     csrrw sp, sscratch, sp
@@ -142,7 +142,7 @@ fn handle_trap(f: *mut TrapFrame) {
 
 global_asm!(
     r#"
-.align 8
+.balign 8
 .global user_entry
 user_entry:
     addi sp, sp, -8 * 2

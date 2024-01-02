@@ -138,7 +138,7 @@ static mut PROCS: [Process; PROCS_MAX] = [Process::new(); PROCS_MAX];
 
 global_asm!(
     r#"
-.align 8
+.balign 8
 .global switch_context
 switch_context:
     addi sp, sp, -13 * 8

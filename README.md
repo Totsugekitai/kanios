@@ -9,6 +9,8 @@ kanios is a toy operating system.
 - `qemu-system-riscv64`
 - `riscv64-unknown-elf-gcc`
 - `cargo`
+- `rustc` for riscv64-unknown-none-elf
+  - `rustup target add riscv-64-unknown-none-elf`, see [the section](https://rust-lang.github.io/rustup/cross-compilation.html)
 
 ### Build and Run
 
